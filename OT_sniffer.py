@@ -5,18 +5,17 @@ import os
 import sys
 import argparse
 import subprocess
-
+import threading
 
 from spinel.stream import StreamOpen
 from spinel.const import SPINEL
 from spinel.codec import WpanApi
-
 from serial.tools.list_ports import comports
 
-import threading
-import sys
-
-DEFAULT_NODEID = 34    # same as WELLKNOWN_NODE_ID
+# Nodeid is required to execute ot-ncp-ftd for its sim radio socket port.
+# This is maximum that works for MacOS.
+DEFAULT_NODEID = 34
+COMMON_BAUDRATE = [460800, 115200, 9600]
 
 ERROR_USAGE = 0
 ERROR_ARG = 1
@@ -24,11 +23,9 @@ ERROR_INTERFACE = 2
 ERROR_FIFO = 3
 ERROR_INTERNAL = 4
 
-common_baudrate = [460800, 115200, 9600]
 
 def extcap_config(interface, option):
     """List configuration for the given interface"""
-    # print("arg {number=0}{call=--only-advertising}{display=Only advertising packets}{tooltip=The sniffer will only capture advertising packets from the selected device}{type=boolflag}{save=false}")
     args = []
     values = []
     args.append((0, '--channel', 'Channel', 'IEEE 802.15.4 channel', 'selector', '{required=true}{default=11}'))
@@ -38,7 +35,7 @@ def extcap_config(interface, option):
         for arg in args:
             print("arg {number=%d}{call=%s}{display=%s}{tooltip=%s}{type=%s}%s" % arg)
         values = values + [(0, "%d" % i, "%d" % i, "true" if i == 11 else "false") for i in range(11, 27)]
-        values = values + [(1, "%d" % b, "%d" % b, "true" if b == 460800 else "false") for b in common_baudrate]
+        values = values + [(1, "%d" % b, "%d" % b, "true" if b == 460800 else "false") for b in COMMON_BAUDRATE]
 
     for value in values:
         print("value {arg=%d}{value=%s}{display=%s}{default=%s}" % value)
@@ -48,8 +45,7 @@ def extcap_dlts(interface):
     print("dlt {number=195}{name=IEEE802_15_4_WITHFCS}{display=IEEE 802.15.4 with FCS}")
 
 def serialopen(interface_port, STDOUT, DirtylogFile):
-    sys.stdout = DirtylogFile # clean dirtylog
-
+    sys.stdout = DirtylogFile
     stream = StreamOpen('u', str(interface_port).split()[0], False)
     wpan_api = WpanApi(stream, nodeid=DEFAULT_NODEID)
     value = wpan_api.prop_get_value(SPINEL.PROP_CAPS)
@@ -67,22 +63,17 @@ def extcap_interfaces():
     """List available interfaces to capture from"""
     STDOUT = sys.stdout
     DirtylogFile = open('dirtylog', 'w')
-
     print("extcap {version=0.0.0}{display=OT Sniffer}{help=url}")
+
     for interface_port in comports():
         th = threading.Thread(target=serialopen, args=(interface_port, STDOUT, DirtylogFile))
         th.start()
 
 def extcap_capture(interface, fifo, control_in, control_out, baudrate, channel):
     """Start the sniffer to capture packets"""
-
     script = os.path.dirname(__file__) + '\sniffer.py'
-    # syslog.syslog('OT sniffer: [script] %s' % script)
     cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
-    # cmd = ['sniffer.py', '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
-    # syslog.syslog('OT sniffer: [cmd] %s' % cmd)
     subprocess.Popen(cmd).wait()
-    # syslog.syslog('OT sniffer: run -----------------------------------------')
 
 def extcap_close_fifo(fifo):
     """"Close extcap fifo"""
@@ -97,13 +88,8 @@ def extcap_close_fifo(fifo):
 
 
 if __name__ == '__main__':
-    # syslog.syslog("!!!!!!OT sniffer start!!!!!!")
     interface = ""
     option = ""
-
-    # Add extcap log handler to Logger
-    # extcap_log_handler = ExtcapLoggerHandler()
-    # Logger.addLogHandler(extcap_log_handler)
 
     # Capture options
     parser = argparse.ArgumentParser(description="Nordic Semiconductor nRF Sniffer extcap plugin")
@@ -142,11 +128,6 @@ if __name__ == '__main__':
     if len(sys.argv) <= 1:
         parser.exit("No arguments given!")
 
-    # if args.extcap_capture_filter:
-    #     parse_capture_filter(args.extcap_capture_filter)
-    #     if args.extcap_interface and len(sys.argv) == 5:
-    #         sys.exit(0)
-
     if not args.extcap_interfaces and args.extcap_interface is None:
         parser.exit("An interface must be provided or the selection must be displayed")
 
@@ -170,7 +151,6 @@ if __name__ == '__main__':
         channel = args.channel if args.channel else 11
         baudrate = args.baudrate if args.baudrate else 460800
         try:
-            # syslog.syslog("!!!!!try extcap_capture!!!!!")
             extcap_capture(interface, args.fifo, args.extcap_control_in, args.extcap_control_out, args.baudrate, args.channel)
         except KeyboardInterrupt:
             pass
