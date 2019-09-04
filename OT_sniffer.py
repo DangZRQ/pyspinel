@@ -71,7 +71,11 @@ def extcap_interfaces():
 
 def extcap_capture(interface, fifo, control_in, control_out, baudrate, channel):
     """Start the sniffer to capture packets"""
-    script = os.path.dirname(__file__) + '\sniffer.py'
+    if sys.platform == 'win32':
+        script = os.path.dirname(__file__) + '\sniffer.py'
+    else:
+        script = os.path.dirname(__file__) + '/sniffer.py'
+
     cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
     subprocess.Popen(cmd).wait()
 
