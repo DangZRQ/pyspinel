@@ -22,7 +22,7 @@ import os
 WiresharkExtcapDir = ''
 
 if sys.platform == 'linux2':
-    WiresharkExtcapDir = os.popen('find / -type d -ipath *wireshark*extcap').read()
+    WiresharkExtcapDir = str(os.popen('find /usr/ -type d -ipath *wireshark*extcap').read()).split()[0]
 elif sys.platform == 'darwin':
     WiresharkExtcapDir = str(os.popen('find /Applications/ -type d -ipath *wireshark*extcap').read()).split()[0]
 elif sys.platform == 'win32':
@@ -30,7 +30,6 @@ elif sys.platform == 'win32':
     if WiresharkDir:
         WiresharkExtcapDir = WiresharkDir + '\extcap'
 
-print (WiresharkExtcapDir)
 setup(
     name='pyspinel',
     version='1.0.0a3',
