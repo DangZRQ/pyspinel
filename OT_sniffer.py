@@ -4,7 +4,6 @@ from __future__ import print_function
 import os
 import sys
 import argparse
-import syslog
 import subprocess
 
 
@@ -77,10 +76,10 @@ def extcap_interfaces():
 def extcap_capture(interface, fifo, control_in, control_out, baudrate, channel):
     """Start the sniffer to capture packets"""
 
-    # script = os.path.dirname(__file__) + '\OTSnifferAPI\sniffer.py'
+    script = os.path.dirname(__file__) + '\sniffer.py'
     # syslog.syslog('OT sniffer: [script] %s' % script)
-    # cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
-    cmd = ['sniffer.py', '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
+    cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
+    # cmd = ['sniffer.py', '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
     # syslog.syslog('OT sniffer: [cmd] %s' % cmd)
     subprocess.Popen(cmd).wait()
     # syslog.syslog('OT sniffer: run -----------------------------------------')
