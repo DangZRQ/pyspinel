@@ -30,6 +30,7 @@ def extcap_config(interface, option):
     values = []
     args.append((0, '--channel', 'Channel', 'IEEE 802.15.4 channel', 'selector', '{required=true}{default=11}'))
     args.append((1, '--baudrate', 'Baudrate', 'Serial port baud rate', 'selector', '{required=true}{default=460800}'))
+    args.append((2, '--tap', 'IEEE 802.15.4 TAP (only for Wireshark3.0 and later)', 'IEEE 802.15.4 TAP', 'boolflag', '{default=yes}'))
 
     if (len(option) <= 0):
         for arg in args:
@@ -69,14 +70,17 @@ def extcap_interfaces():
         th = threading.Thread(target=serialopen, args=(interface_port, STDOUT, DirtylogFile))
         th.start()
 
-def extcap_capture(interface, fifo, control_in, control_out, baudrate, channel):
+def extcap_capture(interface, fifo, control_in, control_out, baudrate, channel, tap):
     """Start the sniffer to capture packets"""
     if sys.platform == 'win32':
         script = os.path.dirname(__file__) + '\sniffer.py'
     else:
         script = os.path.dirname(__file__) + '/sniffer.py'
-
-    cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
+    
+    if tap:
+        cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '--tap', '-b', baudrate, '-o', str(fifo)]
+    else:
+        cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
     subprocess.Popen(cmd).wait()
 
 def extcap_close_fifo(fifo):
@@ -113,6 +117,7 @@ if __name__ == '__main__':
     # Interface Arguments
     parser.add_argument("--channel", help="IEEE 802.15.4 capture channel [11-26]")
     parser.add_argument("--baudrate", help="Serial port baud rate")
+    parser.add_argument("--tap", help="IEEE 802.15.4 TAP (only for Wireshark3.0 and later", action="store_true")
 
     try:
         args, unknown = parser.parse_known_args()
@@ -155,7 +160,7 @@ if __name__ == '__main__':
         channel = args.channel if args.channel else 11
         baudrate = args.baudrate if args.baudrate else 460800
         try:
-            extcap_capture(interface, args.fifo, args.extcap_control_in, args.extcap_control_out, args.baudrate, args.channel)
+            extcap_capture(interface, args.fifo, args.extcap_control_in, args.extcap_control_out, args.baudrate, args.channel, args.tap)
         except KeyboardInterrupt:
             pass
         except:
