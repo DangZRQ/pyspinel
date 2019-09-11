@@ -46,6 +46,7 @@ LQI_TYPE = 10
 LQI_LEN = 1
 
 
+
 def crc( s ):
     # Some chips do not transmit the CRC, here we recalculate the CRC.
 
@@ -81,18 +82,18 @@ class PcapCodec(object):
         """ Returns a pcap encapsulation of the given frame. """
         # write frame pcap header
         TLVs_length = TLVS_LENGTH_DEFAULT
-
+        
         if options_crc:
             frame = crc(frame)
             TLVs_length += 8
-
+            
         if options_rssi:
             if (cls._dlt == DLT_IEEE802_15_4_TAP):
                 TLVs_length += 16
             else:
                 # TI style FCS format: replace the last two bytes with RSSI and LQI
                 frame = frame[:-2] + chr(metadata[0] & 0xff) + chr(metadata[3][1] & 0xff)
-
+            
         if (cls._dlt == DLT_IEEE802_15_4_TAP):
             length = len(frame) + TLVs_length
         else:
