@@ -22,9 +22,13 @@ import os
 WiresharkExtcapDir = ''
 
 if sys.platform == 'linux2':
-    WiresharkExtcapDir = str(os.popen('find /usr/ -type d -ipath *wireshark*extcap').read()).split()[0]
+    WiresharkExtcapDir = os.popen('find /usr/ -type d -ipath *wireshark*extcap').read()
+    if WiresharkExtcapDir:
+        WiresharkExtcapDir = str(WiresharkExtcapDir).split()[0]
 elif sys.platform == 'darwin':
-    WiresharkExtcapDir = str(os.popen('find /Applications/ -type d -ipath *wireshark*extcap').read()).split()[0]
+    WiresharkExtcapDir = os.popen('find /Applications/ -type d -ipath *wireshark*extcap').read()
+    if WiresharkExtcapDir:
+        WiresharkExtcapDir = str(WiresharkExtcapDir).split()[0]
 elif sys.platform == 'win32':
     WiresharkDir = raw_input("Wireshark installation directory: ")
     if WiresharkDir:
