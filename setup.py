@@ -65,5 +65,5 @@ setup(
         'pyserial',
     ],
     scripts=['spinel-cli.py', 'sniffer.py'],
-    data_files=[(WiresharkExtcapDir, ['sniffer.py', 'OT_sniffer.py', 'OT_sniffer.bat'])]
+    data_files=[(WiresharkExtcapDir, ['sniffer.py', 'extcap_ot.py', 'extcap_ot.bat'])]
 )
