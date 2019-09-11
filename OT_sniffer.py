@@ -80,7 +80,7 @@ def extcap_capture(interface, fifo, control_in, control_out, baudrate, channel, 
     if tap:
         cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '--tap', '-b', baudrate, '-o', str(fifo)]
     else:
-        cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '-b', baudrate, '-o', str(fifo)]
+        cmd = ['python', script, '-c', channel, '-u', interface, '--rssi', '-b', baudrate, '-o', str(fifo)]
     subprocess.Popen(cmd).wait()
 
 def extcap_close_fifo(fifo):
