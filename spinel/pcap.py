@@ -22,6 +22,7 @@ PCAP_MAGIC_NUMBER = 0xa1b2c3d4
 PCAP_VERSION_MAJOR = 2
 PCAP_VERSION_MINOR = 4
 
+<<<<<<< HEAD
 # https://www.tcpdump.org/linktypes.html
 DLT_IEEE802_15_4_WITHFCS = 195
 DLT_IEEE802_15_4_TAP = 283
@@ -45,6 +46,20 @@ RSS_LEN = 4
 LQI_TYPE = 10
 LQI_LEN = 1
 
+=======
+DLT_IEEE802_15_4_WITHFCS = 195
+DLT_IEEE802_15_4_TAP = 283
+TLVS_LENGTH_DEFAULT = 12
+
+FCS_TYPE = 0
+FCS_LEN = 1
+FCS_16bitCRC = 1
+RSS_TYPE = 1
+RSS_LEN = 4
+CHANNEL_TYPE = 3
+CHANNEL_LEN = 3
+CHANNEL_PAGE = 0
+>>>>>>> 49d44bbe1e06f8b5f78f1a83d5f518d0f5fc7a8d
 
 
 def crc( s ):
@@ -78,15 +93,27 @@ class PcapCodec(object):
                            cls._dlt)
 
     @classmethod
+<<<<<<< HEAD
     def encode_frame(cls, frame, sec, usec, options_rssi, options_crc, metadata=None):
+=======
+    def encode_frame(cls, frame, sec, usec, options_rssi, options_crc, rssi, metadata=None):
+>>>>>>> 49d44bbe1e06f8b5f78f1a83d5f518d0f5fc7a8d
         """ Returns a pcap encapsulation of the given frame. """
         # write frame pcap header
         TLVs_length = TLVS_LENGTH_DEFAULT
         
+<<<<<<< HEAD
+=======
+        if options_rssi:
+            frame = frame[:-2] + rssi
+            TLVs_length += 8
+        
+>>>>>>> 49d44bbe1e06f8b5f78f1a83d5f518d0f5fc7a8d
         if options_crc:
             frame = crc(frame)
             TLVs_length += 8
             
+<<<<<<< HEAD
         if options_rssi:
             if (cls._dlt == DLT_IEEE802_15_4_TAP):
                 TLVs_length += 16
@@ -94,6 +121,8 @@ class PcapCodec(object):
                 # TI style FCS format: replace the last two bytes with RSSI and LQI
                 frame = frame[:-2] + chr(metadata[0] & 0xff) + chr(metadata[3][1] & 0xff)
             
+=======
+>>>>>>> 49d44bbe1e06f8b5f78f1a83d5f518d0f5fc7a8d
         if (cls._dlt == DLT_IEEE802_15_4_TAP):
             length = len(frame) + TLVs_length
         else:
@@ -108,7 +137,10 @@ class PcapCodec(object):
             pcap_frame += struct.pack('<HHHH', CHANNEL_TYPE, CHANNEL_LEN, metadata[3][0], CHANNEL_PAGE)
             if options_rssi:
                 pcap_frame += struct.pack('<HHf', RSS_TYPE, RSS_LEN, metadata[0])
+<<<<<<< HEAD
                 pcap_frame += struct.pack('<HHI', LQI_TYPE, LQI_LEN, metadata[3][1])
+=======
+>>>>>>> 49d44bbe1e06f8b5f78f1a83d5f518d0f5fc7a8d
             if options_crc:
                 pcap_frame += struct.pack('<HHI', FCS_TYPE, FCS_LEN, FCS_16bitCRC)
 
