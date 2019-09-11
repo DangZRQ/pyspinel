@@ -44,6 +44,7 @@ def extcap_config(interface, option):
 def extcap_dlts(interface):
     """List DLTs for the given interface"""
     print("dlt {number=195}{name=IEEE802_15_4_WITHFCS}{display=IEEE 802.15.4 with FCS}")
+    print("dlt {number=283}{name=IEEE802_15_4_TAP}{display=IEEE 802.15.4 TAP}")
 
 def serialopen(interface_port, STDOUT, DirtylogFile):
     sys.stdout = DirtylogFile
@@ -117,7 +118,7 @@ if __name__ == '__main__':
     # Interface Arguments
     parser.add_argument("--channel", help="IEEE 802.15.4 capture channel [11-26]")
     parser.add_argument("--baudrate", help="Serial port baud rate")
-    parser.add_argument("--tap", help="IEEE 802.15.4 TAP (only for Wireshark3.0 and later", action="store_true")
+    parser.add_argument("--tap", help="IEEE 802.15.4 TAP (only for Wireshark3.0 and later)", action="store_true")
 
     try:
         args, unknown = parser.parse_known_args()
