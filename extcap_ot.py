@@ -70,6 +70,7 @@ def extcap_interfaces():
     """List available interfaces to capture from"""
     __console__ = sys.stdout
     DirtylogFile = open('dirtylog', 'w')
+    sys.stderr = DirtylogFile
     print("extcap {version=0.0.0}{display=OpenThread Sniffer}{help=https://github.com/openthread/pyspinel}")
 
     for interface in comports():
@@ -131,7 +132,7 @@ if __name__ == '__main__':
                 fifo = arg
                 break
         extcap_close_fifo(fifo)
-        sys.exit("ERROR_ARG")
+        parser.exit("ERROR_ARG")
 
     if len(unknown) > 1:
         print("Sniffer %d unknown arguments given:" % len(unknown))
@@ -154,13 +155,13 @@ if __name__ == '__main__':
         extcap_dlts(args.extcap_interface)
     elif args.capture:
         if args.fifo is None:
-            sys.exit("The fifo must be provided to capture")
+            parser.exit("The fifo must be provided to capture")
         try:
             extcap_capture(args.extcap_interface, args.fifo, args.extcap_control_in, args.extcap_control_out, args.baudrate, args.channel, args.tap)
         except KeyboardInterrupt:
             pass
         except:
-            sys.exit("ERROR_INTERNAL")
+            parser.exit("ERROR_INTERNAL")
     else:
         parser.print_help()
-        sys.exit("ERROR_USAGE")
+        parser.exit("ERROR_USAGE")
