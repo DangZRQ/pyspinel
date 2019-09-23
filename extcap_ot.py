@@ -137,10 +137,11 @@ if __name__ == '__main__':
         parser.exit("ERROR_ARG")
 
     if len(unknown) > 0:
-        print("Sniffer %d unknown arguments given: %s" % (len(unknown), unknown))
+        parser.exit("Sniffer %d unknown arguments given: %s" % (len(unknown), unknown))
 
-    if len(sys.argv) <= 1:
-        parser.exit("No arguments given!")
+    if len(sys.argv) == 0:
+        parser.print_help()
+        sys.exit("No arguments given!")
 
     if not args.extcap_interfaces and args.extcap_interface is None:
         parser.exit("An interface must be provided or the selection must be displayed")
