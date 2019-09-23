@@ -60,6 +60,7 @@ def serialopen(interface, __console__, DirtylogFile):
     if value is not None:
         sys.stdout = __console__
         if sys.platform == 'win32':
+            # The wireshark will show interfaces as "OpenThread Sniffer" rather than "OpenThread Sniffer: COM0" if we set 'display=OpenThread Sniffer' without appending interface name
             print("interface {value=%s}{display=OpenThread Sniffer %s}" % (interface, interface))
         else:
             print("interface {value=%s}{display=OpenThread Sniffer}" % interface)
@@ -69,7 +70,7 @@ def extcap_interfaces():
     """List available interfaces to capture from"""
     __console__ = sys.stdout
     DirtylogFile = open('dirtylog', 'w')
-    print("extcap {version=0.0.0}{display=OT Sniffer}{help=https://github.com/openthread/pyspinel}")
+    print("extcap {version=0.0.0}{display=OpenThread Sniffer}{help=https://github.com/openthread/pyspinel}")
 
     for interface in comports():
         th = threading.Thread(target=serialopen, args=(interface, __console__, DirtylogFile))
@@ -89,10 +90,8 @@ def extcap_capture(interface, fifo, control_in, control_out, baudrate, channel, 
 
 def extcap_close_fifo(fifo):
     """"Close extcap fifo"""
-    if not os.path.exists(fifo):
-        print("FIFO does not exist!", file=sys.stderr)
-        return
-
+    # This is apparently needed to workaround an issue on Windows/macOS
+    # where the message cannot be read. (really?)
     fh = open(fifo, 'wb', 0)
     fh.close()
 
