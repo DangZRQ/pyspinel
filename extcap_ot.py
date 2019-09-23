@@ -11,32 +11,31 @@ from spinel.stream import StreamOpen
 from spinel.const import SPINEL
 from spinel.codec import WpanApi
 from serial.tools.list_ports import comports
+from enum import Enum
 
 # Nodeid is required to execute ot-ncp-ftd for its sim radio socket port.
 # This is maximum that works for MacOS.
 DEFAULT_NODEID = 34
 COMMON_BAUDRATE = [460800, 115200, 9600]
 
-ERROR_USAGE = 0
-ERROR_ARG = 1
-ERROR_INTERFACE = 2
-ERROR_FIFO = 3
-ERROR_INTERNAL = 4
-
+class CONFIG(Enum):
+    CHANNEL = 0
+    BAUDRATE = 1
+    TAP = 2
 
 def extcap_config(interface, option):
     """List configuration for the given interface"""
     args = []
     values = []
-    args.append((0, '--channel', 'Channel', 'IEEE 802.15.4 channel', 'selector', '{required=true}{default=11}'))
-    args.append((1, '--baudrate', 'Baudrate', 'Serial port baud rate', 'selector', '{required=true}{default=460800}'))
-    args.append((2, '--tap', 'IEEE 802.15.4 TAP (only for Wireshark3.0 and later)', 'IEEE 802.15.4 TAP', 'boolflag', '{default=yes}'))
+    args.append((CONFIG.CHANNEL.value, '--channel', 'Channel', 'IEEE 802.15.4 channel', 'selector', '{required=true}{default=11}'))
+    args.append((CONFIG.BAUDRATE.value, '--baudrate', 'Baudrate', 'Serial port baud rate', 'selector', '{required=true}{default=460800}'))
+    args.append((CONFIG.TAP.value, '--tap', 'IEEE 802.15.4 TAP (only for Wireshark3.0 and later)', 'IEEE 802.15.4 TAP', 'boolflag', '{default=yes}'))
 
-    if (len(option) <= 0):
-        for arg in args:
-            print("arg {number=%d}{call=%s}{display=%s}{tooltip=%s}{type=%s}%s" % arg)
-        values = values + [(0, "%d" % i, "%d" % i, "true" if i == 11 else "false") for i in range(11, 27)]
-        values = values + [(1, "%d" % b, "%d" % b, "true" if b == 460800 else "false") for b in COMMON_BAUDRATE]
+    for arg in args:
+        print("arg {number=%d}{call=%s}{display=%s}{tooltip=%s}{type=%s}%s" % arg)
+
+    values = values + [(CONFIG.CHANNEL.value, "%d" % i, "%d" % i, "true" if i == 11 else "false") for i in range(11, 27)]
+    values = values + [(CONFIG.BAUDRATE.value, "%d" % b, "%d" % b, "true" if b == 115200 else "false") for b in COMMON_BAUDRATE]
 
     for value in values:
         print("value {arg=%d}{value=%s}{display=%s}{default=%s}" % value)
@@ -46,29 +45,34 @@ def extcap_dlts(interface):
     print("dlt {number=195}{name=IEEE802_15_4_WITHFCS}{display=IEEE 802.15.4 with FCS}")
     print("dlt {number=283}{name=IEEE802_15_4_TAP}{display=IEEE 802.15.4 TAP}")
 
-def serialopen(interface_port, STDOUT, DirtylogFile):
+def serialopen(interface, __console__, DirtylogFile):
+    """
+    Open serial to indentify OpenThread sniffer
+    :param interface: string, eg: "/dev/ttyUSB0 - Zolertia Firefly platform", "/dev/ttyACM1 - nRF52840 OpenThread Device"
+    """
     sys.stdout = DirtylogFile
-    stream = StreamOpen('u', str(interface_port).split()[0], False)
+    interface = str(interface).split()[0]
+
+    stream = StreamOpen('u', interface, False)
     wpan_api = WpanApi(stream, nodeid=DEFAULT_NODEID)
     value = wpan_api.prop_get_value(SPINEL.PROP_CAPS)
 
     if value is not None:
-        sys.stdout = STDOUT
+        sys.stdout = __console__
         if sys.platform == 'win32':
-            print("interface {value=%s}{display=OpenThread Device %s}" % (str(interface_port).split()[0], str(interface_port).split()[0]))
+            print("interface {value=%s}{display=OpenThread Sniffer %s}" % (interface, interface))
         else:
-            print("interface {value=%s}{display=OpenThread Device}" % str(interface_port).split()[0])
-        sys.stdout = DirtylogFile
+            print("interface {value=%s}{display=OpenThread Sniffer}" % interface)
     stream.close()
 
 def extcap_interfaces():
     """List available interfaces to capture from"""
-    STDOUT = sys.stdout
+    __console__ = sys.stdout
     DirtylogFile = open('dirtylog', 'w')
-    print("extcap {version=0.0.0}{display=OT Sniffer}{help=url}")
+    print("extcap {version=0.0.0}{display=OT Sniffer}{help=https://github.com/openthread/pyspinel}")
 
-    for interface_port in comports():
-        th = threading.Thread(target=serialopen, args=(interface_port, STDOUT, DirtylogFile))
+    for interface in comports():
+        th = threading.Thread(target=serialopen, args=(interface, __console__, DirtylogFile))
         th.start()
 
 def extcap_capture(interface, fifo, control_in, control_out, baudrate, channel, tap):
@@ -77,11 +81,10 @@ def extcap_capture(interface, fifo, control_in, control_out, baudrate, channel, 
         script = os.path.dirname(__file__) + '\sniffer.py'
     else:
         script = os.path.dirname(__file__) + '/sniffer.py'
-    
+
+    cmd = ['python', script, '-c', channel, '-u', interface, '--rssi', '-b', baudrate, '-o', str(fifo)]
     if tap:
-        cmd = ['python', script, '-c', channel, '-u', interface, '--crc', '--rssi', '--tap', '-b', baudrate, '-o', str(fifo)]
-    else:
-        cmd = ['python', script, '-c', channel, '-u', interface, '--rssi', '-b', baudrate, '-o', str(fifo)]
+        cmd.append('--tap')
     subprocess.Popen(cmd).wait()
 
 def extcap_close_fifo(fifo):
@@ -90,18 +93,14 @@ def extcap_close_fifo(fifo):
         print("FIFO does not exist!", file=sys.stderr)
         return
 
-    # This is apparently needed to workaround an issue on Windows/macOS
-    # where the message cannot be read. (really?)
     fh = open(fifo, 'wb', 0)
     fh.close()
 
 
 if __name__ == '__main__':
-    interface = ""
-    option = ""
 
     # Capture options
-    parser = argparse.ArgumentParser(description="Nordic Semiconductor nRF Sniffer extcap plugin")
+    parser = argparse.ArgumentParser(description="OpenThread Sniffer extcap plugin")
 
     # Extcap Arguments
     parser.add_argument("--extcap-interfaces", help="Provide a list of interfaces to capture from", action="store_true")
@@ -127,13 +126,18 @@ if __name__ == '__main__':
         fifo_found = False
         fifo = ""
         for arg in sys.argv:
-            if arg == "--fifo" or arg == "--extcap-fifo":
+            if arg == "--fifo":
                 fifo_found = True
             elif fifo_found:
                 fifo = arg
                 break
         extcap_close_fifo(fifo)
-        sys.exit(ERROR_ARG)
+        sys.exit("ERROR_ARG")
+
+    if len(unknown) > 1:
+        print("Sniffer %d unknown arguments given:" % len(unknown))
+        for unknown_item in unknown:
+            print(unknown_item)
 
     if len(sys.argv) <= 1:
         parser.exit("No arguments given!")
@@ -141,31 +145,23 @@ if __name__ == '__main__':
     if not args.extcap_interfaces and args.extcap_interface is None:
         parser.exit("An interface must be provided or the selection must be displayed")
 
-    if args.extcap_interfaces or args.extcap_interface is None:
+    if args.extcap_interfaces:
         extcap_interfaces()
         sys.exit(0)
 
-    if len(unknown) > 1:
-        print("Sniffer %d unknown arguments given" % len(unknown))
-
-    interface = args.extcap_interface
-
     if args.extcap_config:
-        extcap_config(interface, option)
+        extcap_config(args.extcap_interface, "")
     elif args.extcap_dlts:
-        extcap_dlts(interface)
+        extcap_dlts(args.extcap_interface)
     elif args.capture:
         if args.fifo is None:
-            parser.print_help()
-            sys.exit(ERROR_FIFO)
-        channel = args.channel if args.channel else 11
-        baudrate = args.baudrate if args.baudrate else 460800
+            sys.exit("The fifo must be provided to capture")
         try:
-            extcap_capture(interface, args.fifo, args.extcap_control_in, args.extcap_control_out, args.baudrate, args.channel, args.tap)
+            extcap_capture(args.extcap_interface, args.fifo, args.extcap_control_in, args.extcap_control_out, args.baudrate, args.channel, args.tap)
         except KeyboardInterrupt:
             pass
         except:
-            sys.exit(ERROR_INTERNAL)
+            sys.exit("ERROR_INTERNAL")
     else:
         parser.print_help()
-        sys.exit(ERROR_USAGE)
+        sys.exit("ERROR_USAGE")
