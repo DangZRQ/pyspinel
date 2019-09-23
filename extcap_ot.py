@@ -45,20 +45,23 @@ def extcap_dlts(interface):
     print("dlt {number=195}{name=IEEE802_15_4_WITHFCS}{display=IEEE 802.15.4 with FCS}")
     print("dlt {number=283}{name=IEEE802_15_4_TAP}{display=IEEE 802.15.4 TAP}")
 
-def serialopen(interface, __console__, DirtylogFile):
+def serialopen(interface,  __console__, DirtylogFile):
     """
     Open serial to indentify OpenThread sniffer
     :param interface: string, eg: "/dev/ttyUSB0 - Zolertia Firefly platform", "/dev/ttyACM1 - nRF52840 OpenThread Device"
     """
     sys.stdout = DirtylogFile
+    sys.stderr = DirtylogFile
     interface = str(interface).split()[0]
 
     stream = StreamOpen('u', interface, False)
     wpan_api = WpanApi(stream, nodeid=DEFAULT_NODEID)
     value = wpan_api.prop_get_value(SPINEL.PROP_CAPS)
 
+    sys.stdout = __console__
+    sys.stderr = __console__
+
     if value is not None:
-        sys.stdout = __console__
         if sys.platform == 'win32':
             # The wireshark will show interfaces as "OpenThread Sniffer" rather than "OpenThread Sniffer: COM0" if we set 'display=OpenThread Sniffer' without appending interface name
             print("interface {value=%s}{display=OpenThread Sniffer %s}" % (interface, interface))
@@ -70,7 +73,6 @@ def extcap_interfaces():
     """List available interfaces to capture from"""
     __console__ = sys.stdout
     DirtylogFile = open('dirtylog', 'w')
-    sys.stderr = DirtylogFile
     print("extcap {version=0.0.0}{display=OpenThread Sniffer}{help=https://github.com/openthread/pyspinel}")
 
     for interface in comports():
@@ -134,10 +136,8 @@ if __name__ == '__main__':
         extcap_close_fifo(fifo)
         parser.exit("ERROR_ARG")
 
-    if len(unknown) > 1:
-        print("Sniffer %d unknown arguments given:" % len(unknown))
-        for unknown_item in unknown:
-            print(unknown_item)
+    if len(unknown) > 0:
+        print("Sniffer %d unknown arguments given: %s" % (len(unknown), unknown))
 
     if len(sys.argv) <= 1:
         parser.exit("No arguments given!")
