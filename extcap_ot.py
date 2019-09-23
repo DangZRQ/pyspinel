@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) == 0:
         parser.print_help()
-        sys.exit("No arguments given!")
+        parser.exit("No arguments given!")
 
     if not args.extcap_interfaces and args.extcap_interface is None:
         parser.exit("An interface must be provided or the selection must be displayed")
