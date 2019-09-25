@@ -21,7 +21,7 @@ import os
 
 WiresharkExtcapDir = ''
 
-if sys.platform == 'linux2':
+if sys.platform.startswith('linux'):
     WiresharkExtcapDir = os.popen('find /usr/ -type d -ipath *wireshark*extcap').read()
     if WiresharkExtcapDir:
         WiresharkExtcapDir = str(WiresharkExtcapDir).split()[0]
