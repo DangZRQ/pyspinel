@@ -59,25 +59,52 @@ For Windows, verify that the ```extcap_ot.bat``` file is in the extcap folder
     extcap_ot.py - external script for integrating OpenThread Sniffer with Wireshark
 
 ### SYNOPSIS
-    extcap_ot.py [-hupsnqv]
+    extcap_ot.py [--arguments]
 
 ### DESCRIPTION
 
-*TBD*
+```
+    -h, --help            
+    	Show this help message and exit
+
+    --extcap-interfaces
+       	Provide a list of interfaces to capture from.
+
+    --extcap-interface <EXTCAP_INTERFACE>
+        Provide the interface to capture from.
+    
+    --extcap-dlts
+        Provide a list of dlts for the given interface
+
+    --extcap-config
+        Provide a list of configurations for the given interface.
+
+    --fifo <FIFO>
+        Use together with capture to provide the fifo to dump data to.
+    
+    --channel <CHANNEL>
+         IEEE 802.15.4 capture channel [11-26].
+
+    --baudrate <BAUDRATE>
+        Set the serial port baud rate.
+
+    --tap
+        Use to specify DLTs as IEEE 802.15.4 TAP (only for Wireshark3.0 and later).
+```
 
 ## Quick Start
-###Configuring Wireshark for Thread
+### Configuring Wireshark for Thread
 * Wireshark configuration - [Protocols](https://openthread.io/guides/ncp/sniffer#wireshark_configuration_-_protocols)
 * Wireshark configuration - [FCS Format](https://openthread.io/guides/ncp/sniffer#wireshark_configuration_-_rssi)
     *  For Wireshark 2.x: TI CC24xx metadata
     * For Wireshark 3.x: ITU-T CRC-16
    
-###Using the Sniffer
-####Wireshark capture screen
+### Using the Sniffer
+#### Wireshark capture screen
 The Wireshark capture screen is displayed when Wireshark is first launched. 
 It includes the Wireshark interface for managing packets that are captured 
 and the hardware interfaces connected to the OT Sniffer.
-####Start sniffing
+#### Start sniffing
 
 There are three ways to start sniffing:
 * If this is your first time using an interface, click on interface options 
@@ -101,7 +128,7 @@ Interface Identifier used by Wireshark to identify the capture interfaces
 **Interface name (frame.interface_name)**\
 Interface Identifier used by Wireshark to identify the capture interfaces 
 
-**Channel (wpan-tap.ch_num)**\
+**Channel (wpan-tap.ch_num)**
 
 ## Troubleshooting
 ### The OT sniffer is not listed in the Wireshark interface. 
@@ -125,7 +152,7 @@ Interface Identifier used by Wireshark to identify the capture interfaces
     For Windows:
     1. Run ```extcap_ot.bat --extcap-interfaces``` to list the interface.
     2. If this exits with a python error, verify that python.exe can be run from the command line ```C:>python.exe --version```
-####Wireshark only allow the root user to capture packets
+#### Wireshark only allow the root user to capture packets
 During the Wireshark installation on Ubuntu the user will be prompted to choose one of the following options:
 * Create the wireshark user group and allow all members of that group to capture packets.
 * Only allow the root user to capture packets.
@@ -148,3 +175,6 @@ sudo usermod -a -G dialout [user]
 Log-out and log-in again to apply the new user group settings.
 
 #### Wireshark format error when capturing on multiple USB interfaces on windows
+It's related to a Wireshark [bug](https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=13653), 
+and a patch has been provided. Please download the [patch](Please download the patch and recompile Wireshark)
+and recompile Wireshark.
