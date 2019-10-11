@@ -67,7 +67,7 @@ def serialopen(interface,  __console__, DirtylogFile):
     sys.stdout = DirtylogFile
     sys.stderr = DirtylogFile
     interface = str(interface).split()[0]
-
+    baudrate = None
 
     for speed in COMMON_BAUDRATE:
         stream = StreamOpen('u', interface, False, baudrate=speed)
@@ -77,7 +77,7 @@ def serialopen(interface,  __console__, DirtylogFile):
         result = wpan_api.prop_set_value(SPINEL.PROP_PHY_ENABLED, 1) # detect baudrate
 
         # result should not be None for both NCP and RCP
-	result = wpan_api.prop_get_value(SPINEL.PROP_CAPS) # confirm OpenThread Sniffer
+        result = wpan_api.prop_get_value(SPINEL.PROP_CAPS) # confirm OpenThread Sniffer
 
         # check whether or not is OpenThread Sniffer
         stream.close()
@@ -90,16 +90,15 @@ def serialopen(interface,  __console__, DirtylogFile):
     sys.stdout = __console__
     sys.stderr = __console__
 
-    if value is not None:
-        if baudrate is not None:
-            if sys.platform == 'win32':
-                # Wireshark only shows the value of key `display`('OpenThread Sniffer').
-                # Here intentionally appends interface in the end (e.g. 'OpenThread Sniffer: COM0').
-                print('interface {value=%s:%s}{display=OpenThread Sniffer %s}' % (interface, baudrate, interface))
-            else:
-                # On Linux or MacOS, wireshark will show the concatenation of the content of `display`
-                # and `interface` by default (e.g. 'OpenThread Sniffer: /dev/ttyACM0').
-                print('interface {value=%s:%s}{display=OpenThread Sniffer}' % (interface, baudrate))
+    if baudrate is not None:
+        if sys.platform == 'win32':
+            # Wireshark only shows the value of key `display`('OpenThread Sniffer').
+            # Here intentionally appends interface in the end (e.g. 'OpenThread Sniffer: COM0').
+            print('interface {value=%s:%s}{display=OpenThread Sniffer %s}' % (interface, baudrate, interface))
+        else:
+            # On Linux or MacOS, wireshark will show the concatenation of the content of `display`
+            # and `interface` by default (e.g. 'OpenThread Sniffer: /dev/ttyACM0').
+            print('interface {value=%s:%s}{display=OpenThread Sniffer}' % (interface, baudrate))
 
 
 
