@@ -68,58 +68,48 @@ def serialopen(interface,  __console__, DirtylogFile):
     sys.stderr = DirtylogFile
     interface = str(interface).split()[0]
 
-    stream = StreamOpen('u', interface, False)
-    wpan_api = WpanApi(stream, nodeid=DEFAULT_NODEID)
-    value = wpan_api.prop_get_value(SPINEL.PROP_CAPS)
-
-    sys.stdout = __console__
-    sys.stderr = __console__
-
-    if value is not None:
-        if sys.platform == 'win32':
-            # Wireshark only shows the value of key `display`('OpenThread Sniffer').
-            # Here intentionally appends interface in the end (e.g. 'OpenThread Sniffer: COM0').
-            print('interface {value=%s}{display=OpenThread Sniffer %s}' % (interface, interface))
-        else:
-            # On Linux or MacOS, wireshark will show the concatenation of the content of `display`
-            # and `interface` by default (e.g. 'OpenThread Sniffer: /dev/ttyACM0').
-            print('interface {value=%s}{display=OpenThread Sniffer}' % interface)
-    stream.close()
-
-def detect_baudrate(interface):
-    baudrate = None
 
     for speed in COMMON_BAUDRATE:
         stream = StreamOpen('u', interface, False, baudrate=speed)
 
         wpan_api = WpanApi(stream, nodeid=DEFAULT_NODEID)
-
         # result is None for NCP, not None for RCP
-        result = wpan_api.prop_set_value(SPINEL.PROP_PHY_ENABLED, 1)
+        result = wpan_api.prop_set_value(SPINEL.PROP_PHY_ENABLED, 1) # detect baudrate
 
         # result should not be None for both NCP and RCP
-        result = wpan_api.prop_set_value(SPINEL.PROP_PHY_CHAN, DEFAULT_CHANNEL)
+	result = wpan_api.prop_get_value(SPINEL.PROP_CAPS) # confirm OpenThread Sniffer
 
+        # check whether or not is OpenThread Sniffer
+        stream.close()
         if result is None:
-            stream.close()
             continue
         else:
             baudrate = speed
             break
 
-    stream.close()
-    return baudrate
+    sys.stdout = __console__
+    sys.stderr = __console__
 
-def extcap_baudrate(interface):
-    baudrate = detect_baudrate(interface)
-    if baudrate is not None:
-        print('baudrate:%s' % baudrate)
+    if value is not None:
+        if baudrate is not None:
+            if sys.platform == 'win32':
+                # Wireshark only shows the value of key `display`('OpenThread Sniffer').
+                # Here intentionally appends interface in the end (e.g. 'OpenThread Sniffer: COM0').
+                print('interface {value=%s:%s}{display=OpenThread Sniffer %s}' % (interface, baudrate, interface))
+            else:
+                # On Linux or MacOS, wireshark will show the concatenation of the content of `display`
+                # and `interface` by default (e.g. 'OpenThread Sniffer: /dev/ttyACM0').
+                print('interface {value=%s:%s}{display=OpenThread Sniffer}' % (interface, baudrate))
+
+
+
 
 def extcap_interfaces():
     """List available interfaces to capture from"""
     __console__ = sys.stdout
+
     DirtylogFile = open(os.path.join(tempfile.gettempdir(), 'dirtylog'), 'w')
-    print('extcap {version=0.0.0}{display=OpenThread Sniffer}{help=https://github.com/openthread/pyspinel}')
+    print('extcap {version=1.0.0}{display=OpenThread Sniffer}{help=https://github.com/openthread/pyspinel}')
 
     for interface in comports():
         th = threading.Thread(target=serialopen, args=(interface, __console__, DirtylogFile))
@@ -127,11 +117,14 @@ def extcap_interfaces():
 
 def extcap_capture(interface, fifo, control_in, control_out, channel, tap):
     """Start the sniffer to capture packets"""
-    baudrate = detect_baudrate(interface)
+    # baudrate = detect_baudrate(interface)
+    interface_port = str(interface).split(':')[0]
+    interface_baudrate = str(interface).split(':')[1]
 
-    if baudrate is not None:
-        #cmd = ['python', 'sniffer.py', '-c', channel, '-u', interface, '--rssi', '-b', str(baudrate), '-o', str(fifo)]
-        cmd = ['sniffer.py', '-c', channel, '-u', interface, '--rssi', '-b', str(baudrate), '-o', str(fifo)]
+    if interface_baudrate is not None:
+        cmd = ['sniffer.py', '-c', channel, '-u', interface_port, '--rssi', '-b', interface_baudrate, '-o', str(fifo)]
+        print(cmd)
+
         if tap:
             cmd.append('--tap')
         subprocess.Popen(cmd).wait()
@@ -168,8 +161,8 @@ if __name__ == '__main__':
 
     try:
         args, unknown = parser.parse_known_args()
-    except argparse.ArgumentError as exc:
-        print('%s' % exc, file=sys.stderr)
+    except argparse.ArgumentError as e:
+        print('%s' % str(e))
         fifo_found = False
         fifo = ''
         for arg in sys.argv:
